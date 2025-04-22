@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiSave, FiX, FiCalendar, FiDollarSign, FiTag, FiFileText } from 'react-icons/fi';
+import { FiSave, FiX, FiCalendar, FiDollarSign, FiTag, FiFileText, FiPlus } from 'react-icons/fi';
 
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
+import Modal from '@/components/ui/Modal';
+import QuickCategoryForm from '@/components/forms/QuickCategoryForm';
 import { transactionStorage, categoryStorage } from '@/lib/storage/localStorage';
 import { Transaction, Category, createTransaction } from '@/types/models';
 
@@ -34,6 +36,7 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   
   // Load categories and transaction data if editing
   useEffect(() => {
@@ -80,6 +83,30 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
     };
     
     loadData();
+    
+    // Listen for new category creation
+    const handleNewCategory = (e: CustomEvent) => {
+      if (e.detail && e.detail.categoryId) {
+        // Load the updated categories
+        const loadedCategories = categoryStorage.getAll();
+        setCategories(loadedCategories);
+        
+        // Select the new category
+        handleCategoryChange(e.detail.categoryId);
+        
+        // Update form data
+        setFormData(prev => ({
+          ...prev,
+          categoryId: e.detail.categoryId
+        }));
+      }
+    };
+    
+    window.addEventListener('new-category-created', handleNewCategory as EventListener);
+    
+    return () => {
+      window.removeEventListener('new-category-created', handleNewCategory as EventListener);
+    };
   }, [isEditing, transactionId]);
   
   // Update subcategories when category changes
@@ -102,6 +129,18 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
+    if (name === 'categoryId' && value === 'add-new') {
+      // Dispatch custom event to notify parent component
+      const event = new CustomEvent('transaction-form-message', {
+        detail: {
+          type: 'add-category',
+          transactionType: formData.type
+        }
+      });
+      window.dispatchEvent(event);
+      return;
+    }
+    
     if (name === 'categoryId') {
       handleCategoryChange(value);
     } else {
@@ -110,6 +149,25 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
         [name]: value,
       }));
     }
+  };
+  
+  // Handle adding a new category
+  const handleAddNewCategory = (categoryId: string) => {
+    // Close the modal
+    setShowAddCategoryModal(false);
+    
+    // Select the newly created category
+    handleCategoryChange(categoryId);
+    
+    // Update form data
+    setFormData(prev => ({
+      ...prev,
+      categoryId
+    }));
+    
+    // Refresh the categories list
+    const loadedCategories = categoryStorage.getAll();
+    setCategories(loadedCategories);
   };
   
   // Handle form submission
@@ -198,224 +256,242 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
   }
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{isEditing ? 'Edit Transaction' : 'Add New Transaction'}</CardTitle>
-      </CardHeader>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-          
-          {/* Transaction Type */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div 
-              className={`p-4 rounded-lg border cursor-pointer ${
-                formData.type === 'expense' 
-                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-              }`}
-              onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
-            >
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="expense" 
-                  name="type" 
-                  value="expense" 
-                  checked={formData.type === 'expense'} 
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                <label htmlFor="expense" className="font-medium text-gray-900 dark:text-white cursor-pointer">
-                  Expense
-                </label>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEditing ? 'Edit Transaction' : 'Add New Transaction'}</CardTitle>
+        </CardHeader>
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            
+            {/* Transaction Type */}
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div 
+                className={`p-4 rounded-lg border cursor-pointer ${
+                  formData.type === 'expense' 
+                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                }`}
+                onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+              >
+                <div className="flex items-center">
+                  <input 
+                    type="radio" 
+                    id="expense" 
+                    name="type" 
+                    value="expense" 
+                    checked={formData.type === 'expense'} 
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  <label htmlFor="expense" className="font-medium text-gray-900 dark:text-white cursor-pointer">
+                    Expense
+                  </label>
+                </div>
+              </div>
+              
+              <div 
+                className={`p-4 rounded-lg border cursor-pointer ${
+                  formData.type === 'income' 
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                }`}
+                onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+              >
+                <div className="flex items-center">
+                  <input 
+                    type="radio" 
+                    id="income" 
+                    name="type" 
+                    value="income" 
+                    checked={formData.type === 'income'} 
+                    onChange={handleChange}
+                    className="mr-2"
+                  />
+                  <label htmlFor="income" className="font-medium text-gray-900 dark:text-white cursor-pointer">
+                    Income
+                  </label>
+                </div>
               </div>
             </div>
             
-            <div 
-              className={`p-4 rounded-lg border cursor-pointer ${
-                formData.type === 'income' 
-                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-              }`}
-              onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
-            >
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="income" 
-                  name="type" 
-                  value="income" 
-                  checked={formData.type === 'income'} 
-                  onChange={handleChange}
-                  className="mr-2"
-                />
-                <label htmlFor="income" className="font-medium text-gray-900 dark:text-white cursor-pointer">
-                  Income
-                </label>
-              </div>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <div className="space-y-2">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Description
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiFileText className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="description"
-                name="description"
-                placeholder="e.g., Grocery shopping, Salary payment"
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.description}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          {/* Amount */}
-          <div className="space-y-2">
-            <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Amount
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiDollarSign className="text-gray-400" />
-              </div>
-              <input
-                type="number"
-                id="amount"
-                name="amount"
-                placeholder="0.00"
-                step="0.01"
-                min="0.01"
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.amount}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          {/* Date */}
-          <div className="space-y-2">
-            <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Date
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiCalendar className="text-gray-400" />
-              </div>
-              <input
-                type="date"
-                id="date"
-                name="date"
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.date}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          {/* Category */}
-          <div className="space-y-2">
-            <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Category
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiTag className="text-gray-400" />
-              </div>
-              <select
-                id="categoryId"
-                name="categoryId"
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.categoryId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select a category</option>
-                {categories
-                  .filter(cat => (formData.type === 'expense' ? !cat.incomeOnly : !cat.expenseOnly))
-                  .map(category => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))
-                }
-              </select>
-            </div>
-          </div>
-          
-          {/* Subcategory (only if the selected category has subcategories) */}
-          {subcategories.length > 0 && (
+            {/* Description */}
             <div className="space-y-2">
-              <label htmlFor="subcategoryId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Subcategory
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Description
               </label>
-              <select
-                id="subcategoryId"
-                name="subcategoryId"
-                className="pl-4 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                value={formData.subcategoryId}
-                onChange={handleChange}
-              >
-                <option value="">Select a subcategory (optional)</option>
-                {subcategories.map(subcategory => (
-                  <option key={subcategory.id} value={subcategory.id}>
-                    {subcategory.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiFileText className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  id="description"
+                  name="description"
+                  placeholder="e.g., Grocery shopping, Salary payment"
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
-          )}
+            
+            {/* Amount */}
+            <div className="space-y-2">
+              <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Amount
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiDollarSign className="text-gray-400" />
+                </div>
+                <input
+                  type="number"
+                  id="amount"
+                  name="amount"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0.01"
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  value={formData.amount}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+            
+            {/* Date */}
+            <div className="space-y-2">
+              <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Date
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiCalendar className="text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  id="date"
+                  name="date"
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  value={formData.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+            
+            {/* Category */}
+            <div className="space-y-2">
+              <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Category
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FiTag className="text-gray-400" />
+                </div>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  value={formData.categoryId}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select a category</option>
+                  {categories
+                    .filter(cat => (formData.type === 'expense' ? !cat.incomeOnly : !cat.expenseOnly))
+                    .map(category => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))
+                  }
+                  <option value="add-new" className="font-medium text-green-600 dark:text-green-400">
+                    + Add New Category
+                  </option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Subcategory (only if the selected category has subcategories) */}
+            {subcategories.length > 0 && (
+              <div className="space-y-2">
+                <label htmlFor="subcategoryId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Subcategory
+                </label>
+                <select
+                  id="subcategoryId"
+                  name="subcategoryId"
+                  className="pl-4 pr-4 py-2 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  value={formData.subcategoryId}
+                  onChange={handleChange}
+                >
+                  <option value="">Select a subcategory (optional)</option>
+                  {subcategories.map(subcategory => (
+                    <option key={subcategory.id} value={subcategory.id}>
+                      {subcategory.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
+            {/* Notes */}
+            <div className="space-y-2">
+              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Notes (optional)
+              </label>
+              <textarea
+                id="notes"
+                name="notes"
+                rows={3}
+                placeholder="Add any additional details..."
+                className="p-4 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                value={formData.notes}
+                onChange={handleChange}
+              />
+            </div>
+          </CardContent>
           
-          {/* Notes */}
-          <div className="space-y-2">
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Notes (optional)
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows={3}
-              placeholder="Add any additional details..."
-              className="p-4 w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              value={formData.notes}
-              onChange={handleChange}
-            />
-          </div>
-        </CardContent>
-        
-        <CardFooter className="flex justify-between">
-          <Button 
-            type="button" 
-            variant="outline" 
-            leftIcon={<FiX />}
-            onClick={() => router.push('/transactions')}
-          >
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            leftIcon={<FiSave />}
-            loading={isSaving}
-          >
-            {isEditing ? 'Update' : 'Save'} Transaction
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+          <CardFooter className="flex justify-between">
+            <Button 
+              type="button" 
+              variant="outline" 
+              leftIcon={<FiX />}
+              onClick={() => router.push('/transactions')}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              leftIcon={<FiSave />}
+              isLoading={isSaving}
+            >
+              {isEditing ? 'Update' : 'Save'} Transaction
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+      
+      {/* Add Category Modal */}
+      <Modal
+        isOpen={showAddCategoryModal}
+        onClose={() => setShowAddCategoryModal(false)}
+        title="Add New Category"
+      >
+        <QuickCategoryForm
+          type={formData.type as 'income' | 'expense'}
+          onSuccess={handleAddNewCategory}
+          onCancel={() => setShowAddCategoryModal(false)}
+        />
+      </Modal>
+    </>
   );
 }
