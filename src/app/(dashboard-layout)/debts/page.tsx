@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   FiPlus, 
-  FiEdit2, 
+  FiX, 
   FiTrash2, 
   FiDollarSign, 
   FiCalendar, 
@@ -200,13 +200,22 @@ export default function DebtsPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Debts & Loans</h1>
             <p className="text-gray-600 dark:text-gray-300">Track money you've borrowed or lent</p>
           </div>
-          
-          <Button 
+
+          {showAddForm ?(<Button
+            type="button"
+            variant="outline"
+            leftIcon={<FiX />}
+            onClick={() => setShowAddForm(!showAddForm)}
+          >
+            Cancel
+          </Button>)
+          :
+          (<Button 
             leftIcon={<FiPlus />}
             onClick={() => setShowAddForm(!showAddForm)}
           >
-            {showAddForm ? 'Cancel' : 'Add New'}
-          </Button>
+            Add New
+          </Button>)}
         </div>
       </motion.div>
       

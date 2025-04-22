@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiCalendar } from 'react-icons/fi';
+import { FiPlus, FiX, FiTrash2, FiDollarSign, FiCalendar } from 'react-icons/fi';
 
 import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -25,7 +25,7 @@ export default function BudgetsPage() {
     startDate: new Date().toISOString().split('T')[0],
     endDate: ''
   });
-  
+
   // Load data on component mount
   useEffect(() => {
     const loadData = () => {
@@ -33,7 +33,7 @@ export default function BudgetsPage() {
         const loadedBudgets = budgetStorage.getAll();
         const loadedCategories = categoryStorage.getAll();
         const loadedTransactions = transactionStorage.getAll();
-        
+
         setBudgets(loadedBudgets);
         setCategories(loadedCategories);
         setTransactions(loadedTransactions);
@@ -43,10 +43,10 @@ export default function BudgetsPage() {
         setIsLoading(false);
       }
     };
-    
+
     loadData();
   }, []);
-  
+
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -55,23 +55,23 @@ export default function BudgetsPage() {
       [name]: value
     }));
   };
-  
+
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       // Validate form
       if (!formData.categoryId) {
         alert('Please select a category');
         return;
       }
-      
+
       if (!formData.amount || isNaN(Number(formData.amount)) || Number(formData.amount) <= 0) {
         alert('Please enter a valid amount');
         return;
       }
-      
+
       // Create new budget
       const newBudget = createBudget({
         categoryId: formData.categoryId,
@@ -81,12 +81,12 @@ export default function BudgetsPage() {
         startDate: new Date(formData.startDate).getTime(),
         endDate: formData.endDate ? new Date(formData.endDate).getTime() : undefined
       });
-      
+
       // Save to storage
       const updatedBudgets = [...budgets, newBudget];
       budgetStorage.save(updatedBudgets);
       setBudgets(updatedBudgets);
-      
+
       // Reset form
       setFormData({
         categoryId: '',
@@ -96,14 +96,14 @@ export default function BudgetsPage() {
         startDate: new Date().toISOString().split('T')[0],
         endDate: ''
       });
-      
+
       setShowAddForm(false);
     } catch (error) {
       console.error('Error adding budget:', error);
       alert('Failed to add budget');
     }
   };
-  
+
   // Delete a budget
   const deleteBudget = (id: string) => {
     if (window.confirm('Are you sure you want to delete this budget?')) {
@@ -117,45 +117,45 @@ export default function BudgetsPage() {
       }
     }
   };
-  
+
   // Calculate budget progress
   const calculateProgress = (budget: Budget) => {
     // Get transactions for this budget's category
     const relevantTransactions = transactions.filter(
-      t => t.type === 'expense' && 
-      t.categoryId === budget.categoryId &&
-      (!budget.subcategoryId || t.subcategoryId === budget.subcategoryId)
+      t => t.type === 'expense' &&
+        t.categoryId === budget.categoryId &&
+        (!budget.subcategoryId || t.subcategoryId === budget.subcategoryId)
     );
-    
+
     // Calculate spent amount
     const spentAmount = relevantTransactions.reduce((sum, t) => sum + t.amount, 0);
-    
+
     // Calculate percentage
     const percentage = (spentAmount / budget.amount) * 100;
-    
+
     return {
       spent: spentAmount,
       percentage: Math.min(percentage, 100) // Cap at 100%
     };
   };
-  
+
   // Get category name by ID
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category ? category.name : 'Unknown Category';
   };
-  
+
   // Get subcategory name by ID
   const getSubcategoryName = (categoryId: string, subcategoryId?: string) => {
     if (!subcategoryId) return null;
-    
+
     const category = categories.find(c => c.id === categoryId);
     if (!category || !category.subcategories) return null;
-    
+
     const subcategory = category.subcategories.find(s => s.id === subcategoryId);
     return subcategory ? subcategory.name : null;
   };
-  
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -166,7 +166,7 @@ export default function BudgetsPage() {
       }
     }
   };
-  
+
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
@@ -177,7 +177,7 @@ export default function BudgetsPage() {
       }
     }
   };
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div
@@ -191,16 +191,30 @@ export default function BudgetsPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Budgets</h1>
             <p className="text-gray-600 dark:text-gray-300">Set and track your spending limits</p>
           </div>
-          
-          <Button 
-            leftIcon={<FiPlus />}
-            onClick={() => setShowAddForm(!showAddForm)}
-          >
-            {showAddForm ? 'Cancel' : 'Add Budget'}
-          </Button>
+
+          {showAddForm ?
+            (
+              <Button
+                type="button"
+                variant="outline"
+                leftIcon={<FiX />}
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                Cancel
+              </Button>
+            )
+            :
+            (
+              <Button
+                leftIcon={<FiPlus />}
+                onClick={() => setShowAddForm(!showAddForm)}
+              >
+                Add Budget
+              </Button>
+            )}
         </div>
       </motion.div>
-      
+
       {/* Add Budget Form */}
       {showAddForm && (
         <motion.div
@@ -240,7 +254,7 @@ export default function BudgetsPage() {
                       }
                     </select>
                   </div>
-                  
+
                   {/* Subcategory */}
                   <div className="space-y-2">
                     <label htmlFor="subcategoryId" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -263,7 +277,7 @@ export default function BudgetsPage() {
                       }
                     </select>
                   </div>
-                  
+
                   {/* Amount */}
                   <div className="space-y-2">
                     <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -287,7 +301,7 @@ export default function BudgetsPage() {
                       />
                     </div>
                   </div>
-                  
+
                   {/* Period */}
                   <div className="space-y-2">
                     <label htmlFor="period" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -305,7 +319,7 @@ export default function BudgetsPage() {
                       <option value="yearly">Yearly</option>
                     </select>
                   </div>
-                  
+
                   {/* Start Date */}
                   <div className="space-y-2">
                     <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -326,7 +340,7 @@ export default function BudgetsPage() {
                       />
                     </div>
                   </div>
-                  
+
                   {/* End Date (Optional) */}
                   <div className="space-y-2">
                     <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -347,7 +361,7 @@ export default function BudgetsPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end">
                   <Button type="submit" leftIcon={<FiPlus />}>
                     Create Budget
@@ -358,7 +372,7 @@ export default function BudgetsPage() {
           </Card>
         </motion.div>
       )}
-      
+
       {/* Budgets List */}
       {isLoading ? (
         <div className="flex justify-center items-center py-8">
@@ -375,7 +389,7 @@ export default function BudgetsPage() {
             const progress = calculateProgress(budget);
             const categoryName = getCategoryName(budget.categoryId);
             const subcategoryName = getSubcategoryName(budget.categoryId, budget.subcategoryId);
-            
+
             return (
               <motion.div key={budget.id} variants={itemVariants}>
                 <Card>
@@ -390,8 +404,8 @@ export default function BudgetsPage() {
                           {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)} budget
                         </p>
                       </div>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="icon"
                         onClick={() => deleteBudget(budget.id)}
                         aria-label={`Delete ${categoryName} budget`}
@@ -399,36 +413,35 @@ export default function BudgetsPage() {
                         <FiTrash2 className="text-red-500" />
                       </Button>
                     </div>
-                    
+
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700 dark:text-gray-300">
                           {formatCurrency(progress.spent)} of {formatCurrency(budget.amount)}
                         </span>
-                        <span 
-                          className={`font-medium ${
-                            progress.percentage >= 100 
-                              ? 'text-red-600 dark:text-red-400' 
-                              : progress.percentage >= 80 
-                                ? 'text-yellow-600 dark:text-yellow-400' 
-                                : 'text-green-600 dark:text-green-400'
-                          }`}
+                        <span
+                          className={`font-medium ${progress.percentage >= 100
+                            ? 'text-red-600 dark:text-red-400'
+                            : progress.percentage >= 80
+                              ? 'text-yellow-600 dark:text-yellow-400'
+                              : 'text-green-600 dark:text-green-400'
+                            }`}
                         >
                           {progress.percentage.toFixed(0)}%
                         </span>
                       </div>
-                      
-                      <ProgressBar 
-                        value={progress.percentage} 
+
+                      <ProgressBar
+                        value={progress.percentage}
                         variant={
-                          progress.percentage >= 100 
-                            ? 'danger' 
-                            : progress.percentage >= 80 
-                              ? 'warning' 
+                          progress.percentage >= 100
+                            ? 'danger'
+                            : progress.percentage >= 80
+                              ? 'warning'
                               : 'success'
                         }
                       />
-                      
+
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         {budget.startDate && (
                           <p>

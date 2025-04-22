@@ -13,7 +13,8 @@ import {
   FiSettings,
   FiMenu,
   FiX,
-  FiBell
+  FiBell,
+  FiBarChart
 } from 'react-icons/fi';
 import { cn } from '@/lib/utils';
 import { notificationStorage } from '@/lib/storage/localStorage';
@@ -50,9 +51,10 @@ export default function Navigation() {
     { name: 'Dashboard', href: '/dashboard', icon: <FiHome className="w-5 h-5" /> },
     { name: 'Transactions', href: '/transactions', icon: <FiList className="w-5 h-5" /> },
     { name: 'Categories', href: '/categories', icon: <FiPieChart className="w-5 h-5" /> },
+    { name: 'Insights', href: '/insights', icon: <FiBarChart className="w-5 h-5" /> },
     { name: 'Budgets', href: '/budgets', icon: <FiDollarSign className="w-5 h-5" /> },
     { name: 'Debts', href: '/debts', icon: <FiCreditCard className="w-5 h-5" /> },
-    { name: 'Settings', href: '/settings', icon: <FiSettings className="w-5 h-5" /> },
+    // { name: 'Settings', href: '/settings', icon: <FiSettings className="w-5 h-5" /> },
   ];
   
   // Close mobile menu when route changes
@@ -100,7 +102,7 @@ export default function Navigation() {
           })}
         </div>
         
-        <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800">
+        {/* <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800">
           <Link 
             href="/notifications"
             className="flex items-center px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -118,7 +120,7 @@ export default function Navigation() {
               </span>
             )}
           </Link>
-        </div>
+        </div> */}
       </nav>
       
       {/* Mobile Navigation */}
