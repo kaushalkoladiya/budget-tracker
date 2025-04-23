@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { 
-  FiPlus, 
-  FiFilter, 
-  FiSearch, 
-  FiChevronDown, 
+import {
+  FiPlus,
+  FiFilter,
+  FiSearch,
+  FiChevronDown,
   FiChevronUp,
   FiEdit2,
   FiTrash2,
@@ -17,37 +17,39 @@ import {
   FiTrendingDown
 } from 'react-icons/fi';
 
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import { transactionStorage, categoryStorage } from '@/lib/storage/localStorage';
-import { Transaction, Category } from '@/types/models';
+import { Transaction, Category, TRANSACTION_TYPES } from '@/types/models';
+
+type FilterType = 'all' | typeof TRANSACTION_TYPES.INCOME | typeof TRANSACTION_TYPES.EXPENSE;
 
 export default function TransactionsPage() {
   // State for transactions and categories
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State for filtering and sorting
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [filterType, setFilterType] = useState<FilterType>('all');
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [sortField, setSortField] = useState<'date' | 'amount'>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   // Load data on component mount
   useEffect(() => {
     const loadData = () => {
       try {
         const loadedTransactions = transactionStorage.getAll();
         const loadedCategories = categoryStorage.getAll();
-        
+
         setTransactions(loadedTransactions);
         setCategories(loadedCategories);
       } catch (error) {
@@ -56,10 +58,10 @@ export default function TransactionsPage() {
         setIsLoading(false);
       }
     };
-    
+
     loadData();
   }, []);
-  
+
   // Handle transaction deletion
   const handleDeleteTransaction = (id: string) => {
     if (window.confirm('Are you sure you want to delete this transaction?')) {
@@ -72,7 +74,7 @@ export default function TransactionsPage() {
       }
     }
   };
-  
+
   // Filter and sort transactions
   const filteredTransactions = transactions
     .filter(transaction => {
@@ -80,45 +82,45 @@ export default function TransactionsPage() {
       if (filterType !== 'all' && transaction.type !== filterType) {
         return false;
       }
-      
+
       // Filter by category
       if (filterCategory && transaction.categoryId !== filterCategory) {
         return false;
       }
-      
+
       // Search by description
       if (searchQuery && !transaction.description.toLowerCase().includes(searchQuery.toLowerCase())) {
         return false;
       }
-      
+
       return true;
     })
     .sort((a, b) => {
       // Sort by selected field
       if (sortField === 'date') {
-        return sortDirection === 'asc' 
-          ? a.date - b.date 
+        return sortDirection === 'asc'
+          ? a.date - b.date
           : b.date - a.date;
       } else {
-        return sortDirection === 'asc' 
-          ? a.amount - b.amount 
+        return sortDirection === 'asc'
+          ? a.amount - b.amount
           : b.amount - a.amount;
       }
     });
-  
+
   // Calculate pagination
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  
+
   // Get category name by ID
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     return category ? category.name : 'Uncategorized';
   };
-  
+
   // Toggle sort direction or change sort field
   const handleSort = (field: 'date' | 'amount') => {
     if (sortField === field) {
@@ -128,7 +130,7 @@ export default function TransactionsPage() {
       setSortDirection('desc');
     }
   };
-  
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -139,7 +141,7 @@ export default function TransactionsPage() {
       }
     }
   };
-  
+
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
@@ -150,12 +152,12 @@ export default function TransactionsPage() {
       }
     }
   };
-  
+
   // Empty state for first-time users
   if (!isLoading && transactions.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <motion.div 
+        <motion.div
           className="max-w-3xl mx-auto text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -177,7 +179,7 @@ export default function TransactionsPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div
@@ -191,13 +193,13 @@ export default function TransactionsPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Transactions</h1>
             <p className="text-gray-600 dark:text-gray-300">Manage your income and expenses</p>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-3">
             <Link href="/transactions/new">
               <Button leftIcon={<FiPlus />}>Add Transaction</Button>
             </Link>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               leftIcon={<FiFilter />}
               onClick={() => setShowFilters(!showFilters)}
             >
@@ -206,7 +208,7 @@ export default function TransactionsPage() {
           </div>
         </div>
       </motion.div>
-      
+
       {/* Filters */}
       {showFilters && (
         <motion.div
@@ -231,20 +233,20 @@ export default function TransactionsPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                
+
                 {/* Type Filter */}
-                <div>
+                <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
                   <select
-                    className="w-full border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-4 py-2"
+                    className="flex-1 bg-transparent border-none focus:ring-0 text-gray-800 dark:text-gray-200"
                     value={filterType}
-                    onChange={(e) => setFilterType(e.target.value as 'all' | 'income' | 'expense')}
+                    onChange={(e) => setFilterType(e.target.value as FilterType)}
                   >
                     <option value="all">All Types</option>
-                    <option value="income">Income Only</option>
-                    <option value="expense">Expenses Only</option>
+                    <option value={TRANSACTION_TYPES.INCOME}>Income</option>
+                    <option value={TRANSACTION_TYPES.EXPENSE}>Expenses</option>
                   </select>
                 </div>
-                
+
                 {/* Category Filter */}
                 <div>
                   <select
@@ -261,11 +263,11 @@ export default function TransactionsPage() {
                   </select>
                 </div>
               </div>
-              
+
               <div className="flex justify-end mt-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   leftIcon={<FiX />}
                   onClick={() => {
                     setSearchQuery('');
@@ -282,7 +284,7 @@ export default function TransactionsPage() {
           </Card>
         </motion.div>
       )}
-      
+
       {/* Transactions List */}
       <Card>
         <CardHeader>
@@ -302,28 +304,28 @@ export default function TransactionsPage() {
                     <tr className="border-b border-gray-200 dark:border-gray-800">
                       <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Description</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400">Category</th>
-                      <th 
+                      <th
                         className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
                         onClick={() => handleSort('date')}
                       >
                         <div className="flex items-center">
                           <span>Date</span>
                           {sortField === 'date' && (
-                            sortDirection === 'asc' ? 
-                              <FiChevronUp className="ml-1" /> : 
+                            sortDirection === 'asc' ?
+                              <FiChevronUp className="ml-1" /> :
                               <FiChevronDown className="ml-1" />
                           )}
                         </div>
                       </th>
-                      <th 
+                      <th
                         className="text-right py-3 px-4 font-medium text-gray-500 dark:text-gray-400 cursor-pointer"
                         onClick={() => handleSort('amount')}
                       >
                         <div className="flex items-center justify-end">
                           <span>Amount</span>
                           {sortField === 'amount' && (
-                            sortDirection === 'asc' ? 
-                              <FiChevronUp className="ml-1" /> : 
+                            sortDirection === 'asc' ?
+                              <FiChevronUp className="ml-1" /> :
                               <FiChevronDown className="ml-1" />
                           )}
                         </div>
@@ -337,7 +339,7 @@ export default function TransactionsPage() {
                     animate="visible"
                   >
                     {paginatedTransactions.map((transaction) => (
-                      <motion.tr 
+                      <motion.tr
                         key={transaction.id}
                         variants={itemVariants}
                         className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
@@ -356,28 +358,27 @@ export default function TransactionsPage() {
                         <td className="py-3 px-4 text-gray-700 dark:text-gray-300">
                           {new Date(transaction.date).toLocaleDateString()}
                         </td>
-                        <td className={`py-3 px-4 text-right font-medium ${
-                          transaction.type === 'income' 
-                            ? 'text-green-600 dark:text-green-400' 
+                        <td className={`py-3 px-4 text-right font-medium ${transaction.type === TRANSACTION_TYPES.INCOME
+                            ? 'text-green-600 dark:text-green-400'
                             : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          {transaction.type === 'income' ? '+' : '-'}
+                          }`}>
+                          {transaction.type === TRANSACTION_TYPES.INCOME ? '+' : '-'}
                           {formatCurrency(transaction.amount)}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end space-x-2">
                             <Link href={`/transactions/edit/${transaction.id}`}>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 aria-label="Edit transaction"
                               >
                                 <FiEdit2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                               </Button>
                             </Link>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               aria-label="Delete transaction"
                               onClick={() => handleDeleteTransaction(transaction.id)}
                             >
@@ -390,7 +391,7 @@ export default function TransactionsPage() {
                   </motion.tbody>
                 </table>
               </div>
-              
+
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
@@ -421,8 +422,8 @@ export default function TransactionsPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400 mb-4">No transactions found matching your filters</p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 leftIcon={<FiX />}
                 onClick={() => {
                   setSearchQuery('');
@@ -436,7 +437,7 @@ export default function TransactionsPage() {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
         {/* Income Summary */}
@@ -452,14 +453,14 @@ export default function TransactionsPage() {
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(
                   transactions
-                    .filter(t => t.type === 'income')
+                    .filter(t => t.type === TRANSACTION_TYPES.INCOME)
                     .reduce((sum, t) => sum + t.amount, 0)
                 )}
               </span>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Expenses Summary */}
         <Card>
           <CardContent className="p-6">
@@ -473,14 +474,14 @@ export default function TransactionsPage() {
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(
                   transactions
-                    .filter(t => t.type === 'expense')
+                    .filter(t => t.type === TRANSACTION_TYPES.EXPENSE)
                     .reduce((sum, t) => sum + t.amount, 0)
                 )}
               </span>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Balance Summary */}
         <Card>
           <CardContent className="p-6">
@@ -494,10 +495,10 @@ export default function TransactionsPage() {
               <span className="text-3xl font-bold text-gray-900 dark:text-white">
                 {formatCurrency(
                   transactions
-                    .filter(t => t.type === 'income')
+                    .filter(t => t.type === TRANSACTION_TYPES.INCOME)
                     .reduce((sum, t) => sum + t.amount, 0) -
                   transactions
-                    .filter(t => t.type === 'expense')
+                    .filter(t => t.type === TRANSACTION_TYPES.EXPENSE)
                     .reduce((sum, t) => sum + t.amount, 0)
                 )}
               </span>

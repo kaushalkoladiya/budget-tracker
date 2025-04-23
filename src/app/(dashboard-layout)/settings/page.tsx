@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  FiSave, 
-  FiDownload, 
-  FiUpload, 
-  FiMoon, 
-  FiSun, 
+import {
+  FiSave,
+  FiDownload,
+  FiUpload,
+  FiMoon,
+  FiSun,
   FiDollarSign,
   FiDatabase,
   FiTrash2,
@@ -15,28 +15,28 @@ import {
   FiCheckCircle
 } from 'react-icons/fi';
 
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
-import { 
-  categoryStorage, 
-  transactionStorage, 
-  budgetStorage, 
+import {
+  categoryStorage,
+  transactionStorage,
+  budgetStorage,
   debtStorage,
-  settingsStorage 
+  settingsStorage
 } from '@/lib/storage/localStorage';
 import { initializeMongoDb, testConnection } from '@/lib/storage/mongoDb';
 
-import { Settings, defaultSettings } from '@/types/models/index';
+import { Settings, defaultSettings, THEME_TYPES } from '@/types/models';
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'none' | 'success' | 'error'>('none');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   // Load settings on component mount
   useEffect(() => {
     const loadSettings = () => {
@@ -51,32 +51,32 @@ export default function SettingsPage() {
         setIsLoading(false);
       }
     };
-    
+
     loadSettings();
   }, []);
-  
+
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     setSettings(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
-  
+
   // Save settings
   const saveSettings = async () => {
     setIsSaving(true);
-    
+
     try {
       // Save settings to localStorage
       settingsStorage.save(settings);
-      
+
       // Apply theme
-      if (settings.theme === 'dark') {
+      if (settings.theme === THEME_TYPES.DARK) {
         document.documentElement.classList.add('dark');
-      } else if (settings.theme === 'light') {
+      } else if (settings.theme === THEME_TYPES.LIGHT) {
         document.documentElement.classList.remove('dark');
       } else {
         // System preference
@@ -86,12 +86,12 @@ export default function SettingsPage() {
           document.documentElement.classList.remove('dark');
         }
       }
-      
+
       // Initialize MongoDB if cloud storage is enabled
       if (settings.useCloudStorage && settings.mongoDbUrl) {
         await initializeMongoDb(settings.mongoDbUrl);
       }
-      
+
       alert('Settings saved successfully');
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -100,16 +100,16 @@ export default function SettingsPage() {
       setIsSaving(false);
     }
   };
-  
+
   // Test MongoDB connection
   const testMongoDbConnection = async () => {
     if (!settings.mongoDbUrl) {
       setConnectionStatus('error');
       return;
     }
-    
+
     setIsTestingConnection(true);
-    
+
     try {
       const isConnected = await testConnection(settings.mongoDbUrl);
       setConnectionStatus(isConnected ? 'success' : 'error');
@@ -120,7 +120,7 @@ export default function SettingsPage() {
       setIsTestingConnection(false);
     }
   };
-  
+
   // Export data as JSON
   const exportData = () => {
     try {
@@ -131,12 +131,12 @@ export default function SettingsPage() {
         debts: debtStorage.getAll(),
         settings: settingsStorage.get()
       };
-      
+
       const dataStr = JSON.stringify(data, null, 2);
       const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
-      
+
       const exportFileDefaultName = `budget-tracker-export-${new Date().toISOString().split('T')[0]}.json`;
-      
+
       const linkElement = document.createElement('a');
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
@@ -146,24 +146,24 @@ export default function SettingsPage() {
       alert('Failed to export data');
     }
   };
-  
+
   // Import data from JSON
   const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const reader = new FileReader();
-    
+
     reader.onload = (event) => {
       try {
         const importedData = JSON.parse(event.target?.result as string);
-        
+
         // Validate data structure
-        if (!importedData.categories || !importedData.transactions || 
-            !importedData.budgets || !importedData.debts) {
+        if (!importedData.categories || !importedData.transactions ||
+          !importedData.budgets || !importedData.debts) {
           throw new Error('Invalid data format');
         }
-        
+
         // Confirm before overwriting
         if (window.confirm('This will overwrite your current data. Are you sure you want to continue?')) {
           // Import data
@@ -171,13 +171,13 @@ export default function SettingsPage() {
           transactionStorage.save(importedData.transactions);
           budgetStorage.save(importedData.budgets);
           debtStorage.save(importedData.debts);
-          
+
           // Import settings if available
           if (importedData.settings) {
             settingsStorage.save(importedData.settings);
             setSettings(importedData.settings);
           }
-          
+
           alert('Data imported successfully');
         }
       } catch (error) {
@@ -185,10 +185,10 @@ export default function SettingsPage() {
         alert('Failed to import data. The file may be corrupted or in an invalid format.');
       }
     };
-    
+
     reader.readAsText(file);
   };
-  
+
   // Delete all data
   const deleteAllData = () => {
     try {
@@ -197,13 +197,13 @@ export default function SettingsPage() {
       transactionStorage.clear();
       budgetStorage.clear();
       debtStorage.clear();
-      
+
       // Reset settings to defaults
       settingsStorage.save(defaultSettings);
-      
+
       setShowDeleteConfirm(false);
       alert('All data has been deleted');
-      
+
       // Reload the page to reflect changes
       window.location.reload();
     } catch (error) {
@@ -211,7 +211,7 @@ export default function SettingsPage() {
       alert('Failed to delete data');
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full py-8">
@@ -219,7 +219,7 @@ export default function SettingsPage() {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <motion.div
@@ -231,7 +231,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
         <p className="text-gray-600 dark:text-gray-300">Customize your Budget Tracker experience</p>
       </motion.div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="md:col-span-2 space-y-8">
           {/* Appearance Settings */}
@@ -250,80 +250,24 @@ export default function SettingsPage() {
                   <label htmlFor="theme" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Theme
                   </label>
-                  <div className="flex space-x-4">
-                    <label className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer ${
-                      settings.theme === 'light' 
-                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
-                        : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="theme"
-                        value="light"
-                        checked={settings.theme === 'light'}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <FiSun className="w-5 h-5 mr-2 text-yellow-500" />
-                      <span>Light</span>
-                    </label>
-                    
-                    <label className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer ${
-                      settings.theme === 'dark' 
-                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
-                        : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="theme"
-                        value="dark"
-                        checked={settings.theme === 'dark'}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <FiMoon className="w-5 h-5 mr-2 text-indigo-500" />
-                      <span>Dark</span>
-                    </label>
-                    
-                    <label className={`flex items-center justify-center p-3 border rounded-lg cursor-pointer ${
-                      settings.theme === 'system' 
-                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' 
-                        : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="theme"
-                        value="system"
-                        checked={settings.theme === 'system'}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <span>System</span>
-                    </label>
-                  </div>
+                  <select
+                    id="theme"
+                    name="theme"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    value={settings.theme}
+                    onChange={handleChange}
+                  >
+                    <option value={THEME_TYPES.LIGHT}>Light</option>
+                    <option value={THEME_TYPES.DARK}>Dark</option>
+                    <option value={THEME_TYPES.SYSTEM}>System Preference</option>
+                  </select>
                 </div>
-                
+
                 {/* Currency */}
                 <div className="space-y-2">
                   <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Currency
                   </label>
-                <div className="form-group">
-                  <label htmlFor="theme" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Theme
-                  </label>
-                  <select
-                    id="theme"
-                    name="theme"
-                    value={settings.theme || 'system'}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                  >
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                    <option value="system">System Default</option>
-                  </select>
-                </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <FiDollarSign className="text-gray-400" />
@@ -349,7 +293,7 @@ export default function SettingsPage() {
               </CardContent>
             </Card>
           </motion.div>
-          
+
           {/* Storage Settings */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -380,7 +324,7 @@ export default function SettingsPage() {
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
-                
+
                 {/* MongoDB URL */}
                 {settings.useCloudStorage && (
                   <div className="space-y-2">
@@ -401,7 +345,7 @@ export default function SettingsPage() {
                         onChange={handleChange}
                       />
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-2">
                       <div>
                         {connectionStatus === 'success' && (
@@ -415,9 +359,9 @@ export default function SettingsPage() {
                           </p>
                         )}
                       </div>
-                      
-                      <Button 
-                        variant="outline" 
+
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={testMongoDbConnection}
                         isLoading={isTestingConnection}
@@ -425,29 +369,29 @@ export default function SettingsPage() {
                         Test Connection
                       </Button>
                     </div>
-                    
+
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Your connection URL is stored securely in your browser&apos;s localStorage.
                     </p>
                   </div>
                 )}
-                
+
                 {/* Data Import/Export */}
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Data Management</h3>
-                  
+
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       leftIcon={<FiDownload />}
                       onClick={exportData}
                     >
                       Export Data
                     </Button>
-                    
+
                     <div className="relative">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         leftIcon={<FiUpload />}
                         onClick={() => document.getElementById('import-file')?.click()}
                       >
@@ -461,9 +405,9 @@ export default function SettingsPage() {
                         onChange={importData}
                       />
                     </div>
-                    
-                    <Button 
-                      variant="outline" 
+
+                    <Button
+                      variant="outline"
                       leftIcon={<FiTrash2 />}
                       className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20"
                       onClick={() => setShowDeleteConfirm(true)}
@@ -474,7 +418,7 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end">
-                <Button 
+                <Button
                   leftIcon={<FiSave />}
                   onClick={saveSettings}
                   isLoading={isSaving}
@@ -485,7 +429,7 @@ export default function SettingsPage() {
             </Card>
           </motion.div>
         </div>
-        
+
         {/* App Info */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -501,7 +445,7 @@ export default function SettingsPage() {
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">Budget Tracker</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Version 1.0.0</p>
               </div>
-              
+
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white">Features</h4>
                 <ul className="list-disc list-inside text-sm text-gray-500 dark:text-gray-400 mt-2 space-y-1">
@@ -513,7 +457,7 @@ export default function SettingsPage() {
                   <li>Optional cloud sync</li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white">Technologies</h4>
                 <ul className="list-disc list-inside text-sm text-gray-500 dark:text-gray-400 mt-2 space-y-1">
@@ -523,7 +467,7 @@ export default function SettingsPage() {
                   <li>MongoDB (optional)</li>
                 </ul>
               </div>
-              
+
               <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Your data is stored locally in your browser by default. Enable cloud storage to sync across devices.
@@ -533,7 +477,7 @@ export default function SettingsPage() {
           </Card>
         </motion.div>
       </div>
-      
+
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -554,13 +498,13 @@ export default function SettingsPage() {
                 This action cannot be undone. All your transactions, categories, budgets, and debts will be permanently deleted.
               </p>
               <div className="flex justify-center space-x-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setShowDeleteConfirm(false)}
                 >
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   variant="danger"
                   leftIcon={<FiTrash2 />}
                   onClick={deleteAllData}

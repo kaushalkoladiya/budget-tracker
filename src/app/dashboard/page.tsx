@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiDollarSign, FiPieChart, FiPlus, FiTrendingDown, FiTrendingUp } from 'react-icons/fi';
 
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { formatCurrency } from '@/lib/utils';
 import { transactionStorage, budgetStorage, debtStorage, categoryStorage } from '@/lib/storage/localStorage';
-import { Transaction, Budget, Debt } from '@/types/models';
+import { Transaction, Budget, Debt, TRANSACTION_TYPES, DEBT_TYPES, DEBT_STATUS } from '@/types/models';
 
 export default function Dashboard() {
   // State for financial data
@@ -42,19 +42,19 @@ export default function Dashboard() {
 
         // Calculate financial summary
         const income = loadedTransactions
-          .filter(t => t.type === 'income')
+          .filter(t => t.type === TRANSACTION_TYPES.INCOME)
           .reduce((sum, t) => sum + t.amount, 0);
-        
+
         const expenses = loadedTransactions
-          .filter(t => t.type === 'expense')
+          .filter(t => t.type === TRANSACTION_TYPES.EXPENSE)
           .reduce((sum, t) => sum + t.amount, 0);
-        
+
         const totalOwed = loadedDebts
-          .filter(d => d.type === 'borrowed' && d.status !== 'paid')
+          .filter(d => d.type === DEBT_TYPES.BORROWED && d.status !== DEBT_STATUS.PAID)
           .reduce((sum, d) => sum + d.amount, 0);
-        
+
         const totalLent = loadedDebts
-          .filter(d => d.type === 'lent' && d.status !== 'paid')
+          .filter(d => d.type === DEBT_TYPES.LENT && d.status !== DEBT_STATUS.PAID)
           .reduce((sum, d) => sum + d.amount, 0);
 
         setSummary({
@@ -105,7 +105,7 @@ export default function Dashboard() {
   if (!isLoading && transactions.length === 0 && budgets.length === 0 && debts.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <motion.div 
+        <motion.div
           className="max-w-3xl mx-auto text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -153,7 +153,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Financial Summary Cards */}
-      <motion.div 
+      <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
         variants={containerVariants}
         initial="hidden"
@@ -219,7 +219,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Transactions */}
-        <motion.div 
+        <motion.div
           className="lg:col-span-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -240,8 +240,8 @@ export default function Dashboard() {
               {recentTransactions.length > 0 ? (
                 <div className="space-y-4">
                   {recentTransactions.map((transaction) => (
-                    <div 
-                      key={transaction.id} 
+                    <div
+                      key={transaction.id}
                       className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800"
                     >
                       <div>
@@ -250,12 +250,11 @@ export default function Dashboard() {
                           {new Date(transaction.date).toLocaleDateString()}
                         </p>
                       </div>
-                      <span className={`font-medium ${
-                        transaction.type === 'income' 
-                          ? 'text-green-600 dark:text-green-400' 
+                      <span className={`font-medium ${transaction.type === TRANSACTION_TYPES.INCOME
+                          ? 'text-green-600 dark:text-green-400'
                           : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}
+                        }`}>
+                        {transaction.type === TRANSACTION_TYPES.INCOME ? '+' : '-'}
                         {formatCurrency(transaction.amount)}
                       </span>
                     </div>
@@ -350,24 +349,24 @@ export default function Dashboard() {
                 {budgets.slice(0, 3).map((budget) => {
                   // Find transactions for this budget's category
                   const categoryTransactions = transactions.filter(
-                    t => t.type === 'expense' && 
-                    t.categoryId === budget.categoryId &&
-                    (!budget.subcategoryId || t.subcategoryId === budget.subcategoryId)
+                    t => t.type === TRANSACTION_TYPES.EXPENSE &&
+                      t.categoryId === budget.categoryId &&
+                      (!budget.subcategoryId || t.subcategoryId === budget.subcategoryId)
                   );
-                  
+
                   // Calculate spent amount
                   const spentAmount = categoryTransactions.reduce((sum, t) => sum + t.amount, 0);
-                  
+
                   // Calculate percentage
                   const percentage = (spentAmount / budget.amount) * 100;
-                  
+
                   // Find the category name from the categoryId
                   const category = categoryStorage.getById(budget.categoryId);
                   const categoryName = category ? category.name : 'Unknown Category';
-                  
+
                   // Determine if over budget
                   const isOverBudget = spentAmount > budget.amount;
-                  
+
                   return (
                     <div key={budget.id} className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -379,9 +378,9 @@ export default function Dashboard() {
                           {isOverBudget && ' (Over Budget)'}
                         </p>
                       </div>
-                      <ProgressBar 
-                        value={percentage > 100 ? 100 : percentage} 
-                        showValue 
+                      <ProgressBar
+                        value={percentage > 100 ? 100 : percentage}
+                        showValue
                         color={isOverBudget ? 'red' : undefined}
                       />
                     </div>

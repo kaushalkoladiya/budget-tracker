@@ -1,26 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiTag, FiChevronDown, FiChevronUp, FiInfo } from 'react-icons/fi';
 
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import CategoryForm from '@/components/forms/CategoryForm';
 import SubcategoryForm from '@/components/forms/SubcategoryForm';
 import Tooltip from '@/components/ui/Tooltip';
-import { categoryStorage } from '@/lib/storage/localStorage';
-import { Category, createCategory, createSubcategory } from '@/types/models';
+import { categoryStorage, transactionStorage } from '@/lib/storage/localStorage';
+import { Category, createCategory, createSubcategory, TRANSACTION_TYPES, Transaction } from '@/types/models';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const [addingSubcategoryFor, setAddingSubcategoryFor] = useState<string | null>(null);
-  const [editingSubcategory, setEditingSubcategory] = useState<{categoryId: string, subcategoryId: string} | null>(null);
-  
+  const [editingSubcategory, setEditingSubcategory] = useState<{ categoryId: string, subcategoryId: string } | null>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [activeFormType, setActiveFormType] = useState<'category' | 'subcategory' | null>(null);
+
   // Form states
+  const [showAddForm, setShowAddForm] = useState(false);
   const [newCategory, setNewCategory] = useState({
     name: '',
     color: '#3B82F6',
@@ -28,7 +30,7 @@ export default function CategoriesPage() {
     incomeOnly: false,
     expenseOnly: false
   });
-  
+
   const [editForm, setEditForm] = useState({
     name: '',
     color: '',
@@ -36,38 +38,56 @@ export default function CategoriesPage() {
     incomeOnly: false,
     expenseOnly: false
   });
-  
+
   const [newSubcategory, setNewSubcategory] = useState({
     name: '',
     color: '#3B82F6'
   });
-  
+
   const [editSubcategoryForm, setEditSubcategoryForm] = useState({
     name: '',
     color: ''
   });
-  
-  // Load categories on component mount
+
+  // Load categories on initial mount
   useEffect(() => {
     loadCategories();
+    loadTransactions();
   }, []);
-  
-  const loadCategories = () => {
+
+  const loadCategories = async () => {
     try {
-      const loadedCategories = categoryStorage.getAll();
-      setCategories(loadedCategories);
+      const storedCategories = await categoryStorage.getAll();
+      setCategories(storedCategories);
+
+      // Initialize expanded state for each category
+      const expanded: Record<string, boolean> = {};
+      storedCategories.forEach(cat => {
+        expanded[cat.id] = false;
+      });
+      setExpandedCategories(expanded);
+
+      setIsLoading(false);
     } catch (error) {
-      console.error('Error loading categories:', error);
-    } finally {
+      console.error('Failed to load categories:', error);
       setIsLoading(false);
     }
   };
-  
+
+  const loadTransactions = async () => {
+    try {
+      const storedTransactions = await transactionStorage.getAll();
+      setTransactions(storedTransactions);
+    } catch (error) {
+      console.error('Failed to load transactions:', error);
+    }
+  };
+
   // Handle adding a new category
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCategory.name.trim()) return;
-    
+
     try {
       const category = createCategory({
         name: newCategory.name.trim(),
@@ -77,7 +97,7 @@ export default function CategoriesPage() {
         expenseOnly: newCategory.expenseOnly,
         subcategories: []
       });
-      
+
       const updatedCategories = [...categories, category];
       categoryStorage.save(updatedCategories);
       setCategories(updatedCategories);
@@ -92,7 +112,7 @@ export default function CategoriesPage() {
       console.error('Error adding category:', error);
     }
   };
-  
+
   // Start editing a category
   const startEditing = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
@@ -101,13 +121,13 @@ export default function CategoriesPage() {
         name: category.name,
         color: category.color || '#3B82F6',
         icon: category.icon || 'tag',
-        incomeOnly: category.incomeOnly,
-        expenseOnly: category.expenseOnly
+        incomeOnly: category.incomeOnly ?? false,
+        expenseOnly: category.expenseOnly ?? false
       });
       setEditingCategory(categoryId);
     }
   };
-  
+
   // Cancel editing
   const cancelEditing = () => {
     setEditingCategory(null);
@@ -119,12 +139,12 @@ export default function CategoriesPage() {
       expenseOnly: false
     });
   };
-  
+
   // Save edited category
   const saveCategory = (e: React.FormEvent, categoryId: string) => {
     e.preventDefault();
     if (!editForm.name.trim()) return;
-    
+
     try {
       const updatedCategories = categories.map(category => {
         if (category.id === categoryId) {
@@ -140,7 +160,7 @@ export default function CategoriesPage() {
         }
         return category;
       });
-      
+
       categoryStorage.save(updatedCategories);
       setCategories(updatedCategories);
       setEditingCategory(null);
@@ -148,7 +168,7 @@ export default function CategoriesPage() {
       console.error('Error updating category:', error);
     }
   };
-  
+
   // Delete a category
   const deleteCategory = (categoryId: string) => {
     if (window.confirm('Are you sure you want to delete this category? This will not delete associated transactions, but they will become uncategorized.')) {
@@ -161,38 +181,41 @@ export default function CategoriesPage() {
       }
     }
   };
-  
+
   // Toggle category expansion
   const toggleCategoryExpansion = (categoryId: string) => {
-    setExpandedCategory(prev => prev === categoryId ? null : categoryId);
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
   };
-  
+
   // Start adding a subcategory
   const startAddingSubcategory = (categoryId: string) => {
-    setAddingSubcategoryFor(categoryId);
+    setActiveFormType('subcategory');
     setNewSubcategory({
       name: '',
       color: categories.find(c => c.id === categoryId)?.color || '#3B82F6'
     });
   };
-  
+
   // Cancel adding subcategory
   const cancelAddingSubcategory = () => {
-    setAddingSubcategoryFor(null);
+    setActiveFormType(null);
   };
-  
+
   // Handle adding a new subcategory
   const handleAddSubcategory = (e: React.FormEvent, categoryId: string) => {
     e.preventDefault();
     if (!newSubcategory.name.trim()) return;
-    
+
     try {
       const subcategory = createSubcategory({
         name: newSubcategory.name.trim(),
         color: newSubcategory.color,
         parentCategoryId: categoryId
       });
-      
+
       const updatedCategories = categories.map(category => {
         if (category.id === categoryId) {
           return {
@@ -203,21 +226,21 @@ export default function CategoriesPage() {
         }
         return category;
       });
-      
+
       categoryStorage.save(updatedCategories);
       setCategories(updatedCategories);
-      setAddingSubcategoryFor(null);
-      setExpandedCategory(categoryId); // Expand to show the new subcategory
+      setActiveFormType(null);
+      toggleCategoryExpansion(categoryId);
     } catch (error) {
       console.error('Error adding subcategory:', error);
     }
   };
-  
+
   // Start editing a subcategory
   const startEditingSubcategory = (categoryId: string, subcategoryId: string) => {
     const category = categories.find(c => c.id === categoryId);
     const subcategory = category?.subcategories?.find(s => s.id === subcategoryId);
-    
+
     if (subcategory) {
       setEditSubcategoryForm({
         name: subcategory.name,
@@ -226,20 +249,20 @@ export default function CategoriesPage() {
       setEditingSubcategory({ categoryId, subcategoryId });
     }
   };
-  
+
   // Cancel editing subcategory
   const cancelEditingSubcategory = () => {
     setEditingSubcategory(null);
   };
-  
+
   // Save edited subcategory
   const saveSubcategory = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSubcategory || !editSubcategoryForm.name.trim()) return;
-    
+
     try {
       const { categoryId, subcategoryId } = editingSubcategory;
-      
+
       const updatedCategories = categories.map(category => {
         if (category.id === categoryId) {
           return {
@@ -260,7 +283,7 @@ export default function CategoriesPage() {
         }
         return category;
       });
-      
+
       categoryStorage.save(updatedCategories);
       setCategories(updatedCategories);
       setEditingSubcategory(null);
@@ -268,7 +291,7 @@ export default function CategoriesPage() {
       console.error('Error updating subcategory:', error);
     }
   };
-  
+
   // Delete a subcategory
   const deleteSubcategory = (categoryId: string, subcategoryId: string) => {
     if (window.confirm('Are you sure you want to delete this subcategory? This will not delete associated transactions.')) {
@@ -283,7 +306,7 @@ export default function CategoriesPage() {
           }
           return category;
         });
-        
+
         categoryStorage.save(updatedCategories);
         setCategories(updatedCategories);
       } catch (error) {
@@ -291,7 +314,7 @@ export default function CategoriesPage() {
       }
     }
   };
-  
+
   // Handle form input changes for new category
   const handleNewCategoryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -300,7 +323,7 @@ export default function CategoriesPage() {
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
-  
+
   // Handle color change for new category
   const handleNewCategoryColorChange = (color: string) => {
     setNewCategory(prev => ({
@@ -308,7 +331,7 @@ export default function CategoriesPage() {
       color
     }));
   };
-  
+
   // Handle form input changes for editing category
   const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -317,7 +340,7 @@ export default function CategoriesPage() {
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
   };
-  
+
   // Handle color change for editing category
   const handleEditFormColorChange = (color: string) => {
     setEditForm(prev => ({
@@ -325,7 +348,7 @@ export default function CategoriesPage() {
       color
     }));
   };
-  
+
   // Handle form input changes for new subcategory
   const handleNewSubcategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -334,7 +357,7 @@ export default function CategoriesPage() {
       [name]: value
     }));
   };
-  
+
   // Handle color change for new subcategory
   const handleNewSubcategoryColorChange = (color: string) => {
     setNewSubcategory(prev => ({
@@ -342,7 +365,7 @@ export default function CategoriesPage() {
       color
     }));
   };
-  
+
   // Handle form input changes for editing subcategory
   const handleEditSubcategoryFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -358,6 +381,42 @@ export default function CategoriesPage() {
       color,
     }));
   };
+
+  // Get category spending
+  const getCategorySpending = useMemo(() => {
+    const categorySpending: Record<string, number> = {};
+
+    if (transactions.length === 0) return categorySpending;
+
+    transactions
+      .filter(t => t.type === TRANSACTION_TYPES.EXPENSE)
+      .forEach(transaction => {
+        const { categoryId, amount } = transaction;
+        if (categoryId) {
+          categorySpending[categoryId] = (categorySpending[categoryId] || 0) + amount;
+        }
+      });
+
+    return categorySpending;
+  }, [transactions]);
+
+  // Get category income
+  const getCategoryIncome = useMemo(() => {
+    const categoryIncome: Record<string, number> = {};
+
+    if (transactions.length === 0) return categoryIncome;
+
+    transactions
+      .filter(t => t.type === TRANSACTION_TYPES.INCOME)
+      .forEach(transaction => {
+        const { categoryId, amount } = transaction;
+        if (categoryId) {
+          categoryIncome[categoryId] = (categoryIncome[categoryId] || 0) + amount;
+        }
+      });
+
+    return categoryIncome;
+  }, [transactions]);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -441,26 +500,26 @@ export default function CategoriesPage() {
                             variant="ghost"
                             size="sm"
                             className="text-gray-500"
-                            aria-label={expandedCategory === category.id ? 'Collapse category' : 'Expand category'}
+                            aria-label={expandedCategories[category.id] ? 'Collapse category' : 'Expand category'}
                           >
-                            {expandedCategory === category.id ? (
+                            {expandedCategories[category.id] ? (
                               <FiChevronUp className="w-4 h-4" />
                             ) : (
                               <FiChevronDown className="w-4 h-4" />
                             )}
                           </Button>
-                          <Button 
+                          <Button
                             onClick={() => startEditing(category.id)}
-                            variant="ghost" 
+                            variant="ghost"
                             size="sm"
                             className="text-gray-500"
                             aria-label={`Edit ${category.name}`}
                           >
                             <FiEdit2 className="w-4 h-4" />
                           </Button>
-                          <Button 
+                          <Button
                             onClick={() => deleteCategory(category.id)}
-                            variant="ghost" 
+                            variant="ghost"
                             size="sm"
                             className="text-red-500"
                             aria-label={`Delete ${category.name}`}
@@ -469,9 +528,9 @@ export default function CategoriesPage() {
                           </Button>
                         </div>
                       </div>
-                      
+
                       {/* Subcategories section */}
-                      {expandedCategory === category.id && (
+                      {expandedCategories[category.id] && (
                         <div className="mt-4 pl-6 border-l-2 border-gray-200 dark:border-gray-700">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
@@ -489,8 +548,8 @@ export default function CategoriesPage() {
                               <FiPlus className="w-4 h-4 mr-1" /> Add Subcategory
                             </Button>
                           </div>
-                          
-                          {addingSubcategoryFor === category.id && (
+
+                          {activeFormType === 'subcategory' && (
                             <SubcategoryForm
                               formData={newSubcategory}
                               onChange={handleNewSubcategoryChange}
@@ -500,11 +559,11 @@ export default function CategoriesPage() {
                               submitButtonText="Add Subcategory"
                             />
                           )}
-                          
+
                           {category.subcategories && category.subcategories.length > 0 ? (
                             <div className="space-y-2 mt-2">
                               {category.subcategories.map(subcategory => (
-                                <div 
+                                <div
                                   key={subcategory.id}
                                   className="p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg flex items-center justify-between"
                                 >
@@ -516,31 +575,30 @@ export default function CategoriesPage() {
                                       onSubmit={saveSubcategory}
                                       onCancel={cancelEditingSubcategory}
                                       submitButtonText="Save"
-                                      isEdit={true}
                                     />
                                   ) : (
                                     <>
                                       <div className="flex items-center">
-                                        <div 
-                                          className="w-4 h-4 rounded-full mr-2" 
+                                        <div
+                                          className="w-4 h-4 rounded-full mr-2"
                                           style={{ backgroundColor: subcategory.color || category.color || '#3B82F6' }}
                                         />
                                         <span className="text-sm">{subcategory.name}</span>
                                       </div>
-                                      
+
                                       <div className="flex space-x-1">
-                                        <Button 
+                                        <Button
                                           onClick={() => startEditingSubcategory(category.id, subcategory.id)}
-                                          variant="ghost" 
+                                          variant="ghost"
                                           size="sm"
                                           className="text-gray-500 p-1"
                                           aria-label={`Edit ${subcategory.name}`}
                                         >
                                           <FiEdit2 className="w-3 h-3" />
                                         </Button>
-                                        <Button 
+                                        <Button
                                           onClick={() => deleteSubcategory(category.id, subcategory.id)}
-                                          variant="ghost" 
+                                          variant="ghost"
                                           size="sm"
                                           className="text-red-500 p-1"
                                           aria-label={`Delete ${subcategory.name}`}

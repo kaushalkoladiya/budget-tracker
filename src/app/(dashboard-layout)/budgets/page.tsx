@@ -4,12 +4,12 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiPlus, FiX, FiTrash2, FiDollarSign, FiCalendar } from 'react-icons/fi';
 
-import Button from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { formatCurrency } from '@/lib/utils';
 import { budgetStorage, categoryStorage, transactionStorage } from '@/lib/storage/localStorage';
-import { Budget, Category, Transaction, createBudget } from '@/types/models';
+import { Budget, Category, Transaction, createBudget, BUDGET_PERIODS, TRANSACTION_TYPES } from '@/types/models';
 
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -21,7 +21,7 @@ export default function BudgetsPage() {
     categoryId: '',
     subcategoryId: '',
     amount: '',
-    period: 'monthly' as 'monthly' | 'weekly' | 'yearly',
+    period: BUDGET_PERIODS.MONTHLY,
     startDate: new Date().toISOString().split('T')[0],
     endDate: ''
   });
@@ -92,7 +92,7 @@ export default function BudgetsPage() {
         categoryId: '',
         subcategoryId: '',
         amount: '',
-        period: 'monthly',
+        period: BUDGET_PERIODS.MONTHLY,
         startDate: new Date().toISOString().split('T')[0],
         endDate: ''
       });
@@ -122,7 +122,7 @@ export default function BudgetsPage() {
   const calculateProgress = (budget: Budget) => {
     // Get transactions for this budget's category
     const relevantTransactions = transactions.filter(
-      t => t.type === 'expense' &&
+      t => t.type === TRANSACTION_TYPES.EXPENSE &&
         t.categoryId === budget.categoryId &&
         (!budget.subcategoryId || t.subcategoryId === budget.subcategoryId)
     );
@@ -313,10 +313,11 @@ export default function BudgetsPage() {
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       value={formData.period}
                       onChange={handleChange}
+                      required
                     >
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                      <option value="yearly">Yearly</option>
+                      <option value={BUDGET_PERIODS.WEEKLY}>Weekly</option>
+                      <option value={BUDGET_PERIODS.MONTHLY}>Monthly</option>
+                      <option value={BUDGET_PERIODS.YEARLY}>Yearly</option>
                     </select>
                   </div>
 

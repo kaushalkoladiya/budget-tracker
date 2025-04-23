@@ -7,7 +7,7 @@ import {
   Notification, 
   Settings,
   defaultSettings,
-} from '@/types/models/index';
+} from '@/types/models';
 
 // Storage keys
 const STORAGE_KEYS = {

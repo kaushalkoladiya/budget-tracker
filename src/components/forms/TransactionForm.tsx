@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import Modal from '@/components/ui/Modal';
 import QuickCategoryForm from '@/components/forms/QuickCategoryForm';
 import { transactionStorage, categoryStorage } from '@/lib/storage/localStorage';
-import { Transaction, Category, createTransaction } from '@/types/models';
+import { Transaction, Category, createTransaction, TRANSACTION_TYPES } from '@/types/models';
 
 interface TransactionFormProps {
   transactionId?: string;
@@ -24,7 +24,7 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    type: 'expense',
+    type: TRANSACTION_TYPES.EXPENSE,
     categoryId: '',
     subcategoryId: '',
     date: new Date().toISOString().split('T')[0], // Format as YYYY-MM-DD
@@ -273,19 +273,19 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div 
                 className={`p-4 rounded-lg border cursor-pointer ${
-                  formData.type === 'expense' 
+                  formData.type === TRANSACTION_TYPES.EXPENSE 
                     ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}
-                onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+                onClick={() => setFormData(prev => ({ ...prev, type: TRANSACTION_TYPES.EXPENSE }))}
               >
                 <div className="flex items-center">
                   <input 
                     type="radio" 
                     id="expense" 
                     name="type" 
-                    value="expense" 
-                    checked={formData.type === 'expense'} 
+                    value={TRANSACTION_TYPES.EXPENSE} 
+                    checked={formData.type === TRANSACTION_TYPES.EXPENSE} 
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -297,19 +297,19 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
               
               <div 
                 className={`p-4 rounded-lg border cursor-pointer ${
-                  formData.type === 'income' 
+                  formData.type === TRANSACTION_TYPES.INCOME 
                     ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
                     : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                 }`}
-                onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+                onClick={() => setFormData(prev => ({ ...prev, type: TRANSACTION_TYPES.INCOME }))}
               >
                 <div className="flex items-center">
                   <input 
                     type="radio" 
                     id="income" 
                     name="type" 
-                    value="income" 
-                    checked={formData.type === 'income'} 
+                    value={TRANSACTION_TYPES.INCOME} 
+                    checked={formData.type === TRANSACTION_TYPES.INCOME} 
                     onChange={handleChange}
                     className="mr-2"
                   />
@@ -406,7 +406,7 @@ export default function TransactionForm({ transactionId, onSuccess }: Transactio
                 >
                   <option value="">Select a category</option>
                   {categories
-                    .filter(cat => (formData.type === 'expense' ? !cat.incomeOnly : !cat.expenseOnly))
+                    .filter(cat => (formData.type === TRANSACTION_TYPES.EXPENSE ? !cat.incomeOnly : !cat.expenseOnly))
                     .map(category => (
                       <option key={category.id} value={category.id}>
                         {category.name}

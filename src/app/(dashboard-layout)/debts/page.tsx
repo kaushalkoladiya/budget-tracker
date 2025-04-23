@@ -19,7 +19,7 @@ import Button from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { formatCurrency } from '@/lib/utils';
 import { debtStorage } from '@/lib/storage/localStorage';
-import { Debt, createDebt } from '@/types/models';
+import { Debt, createDebt, DEBT_TYPES, DEBT_STATUS } from '@/types/models';
 
 export default function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -28,7 +28,7 @@ export default function DebtsPage() {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    type: 'borrowed' as 'borrowed' | 'lent',
+    type: DEBT_TYPES.BORROWED,
     personName: '',
     dueDate: '',
     notes: ''
@@ -76,7 +76,7 @@ export default function DebtsPage() {
       }
       
       if (!formData.personName.trim()) {
-        alert('Please enter a person name');
+        alert('Please enter the person\'s name');
         return;
       }
       
@@ -88,7 +88,7 @@ export default function DebtsPage() {
         personName: formData.personName.trim(),
         dueDate: formData.dueDate ? new Date(formData.dueDate).getTime() : undefined,
         notes: formData.notes.trim() || undefined,
-        status: 'pending'
+        status: DEBT_STATUS.ACTIVE
       });
       
       // Save to storage
@@ -100,7 +100,7 @@ export default function DebtsPage() {
       setFormData({
         description: '',
         amount: '',
-        type: 'borrowed',
+        type: DEBT_TYPES.BORROWED,
         personName: '',
         dueDate: '',
         notes: ''
@@ -120,7 +120,7 @@ export default function DebtsPage() {
         if (debt.id === id) {
           return {
             ...debt,
-            status: 'paid',
+            status: DEBT_STATUS.PAID,
             updatedAt: Date.now()
           };
         }
@@ -151,8 +151,8 @@ export default function DebtsPage() {
   
   // Calculate totals
   const totals = debts.reduce((acc, debt) => {
-    if (debt.status !== 'paid') {
-      if (debt.type === 'borrowed') {
+    if (debt.status !== DEBT_STATUS.PAID) {
+      if (debt.type === DEBT_TYPES.BORROWED) {
         acc.totalOwed += debt.amount;
       } else {
         acc.totalLent += debt.amount;
@@ -162,8 +162,8 @@ export default function DebtsPage() {
   }, { totalOwed: 0, totalLent: 0 });
   
   // Filter debts by status
-  const pendingDebts = debts.filter(debt => debt.status === 'pending');
-  const paidDebts = debts.filter(debt => debt.status === 'paid');
+  const activeDebts = debts.filter(debt => debt.status === DEBT_STATUS.ACTIVE);
+  const paidDebts = debts.filter(debt => debt.status === DEBT_STATUS.PAID);
   
   // Animation variants
   const containerVariants = {
@@ -279,48 +279,48 @@ export default function DebtsPage() {
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div 
                     className={`p-4 rounded-lg border cursor-pointer ${
-                      formData.type === 'borrowed' 
+                      formData.type === DEBT_TYPES.BORROWED 
                         ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
                         : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
-                    onClick={() => setFormData(prev => ({ ...prev, type: 'borrowed' }))}
+                    onClick={() => setFormData(prev => ({ ...prev, type: DEBT_TYPES.BORROWED }))}
                   >
                     <div className="flex items-center">
                       <input 
                         type="radio" 
                         id="borrowed" 
                         name="type" 
-                        value="borrowed" 
-                        checked={formData.type === 'borrowed'} 
+                        value={DEBT_TYPES.BORROWED}
+                        checked={formData.type === DEBT_TYPES.BORROWED} 
                         onChange={handleChange}
                         className="mr-2"
                       />
                       <label htmlFor="borrowed" className="font-medium text-gray-900 dark:text-white cursor-pointer">
-                        Money I Borrowed
+                        I Borrowed
                       </label>
                     </div>
                   </div>
                   
                   <div 
                     className={`p-4 rounded-lg border cursor-pointer ${
-                      formData.type === 'lent' 
+                      formData.type === DEBT_TYPES.LENT 
                         ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
                         : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
                     }`}
-                    onClick={() => setFormData(prev => ({ ...prev, type: 'lent' }))}
+                    onClick={() => setFormData(prev => ({ ...prev, type: DEBT_TYPES.LENT }))}
                   >
                     <div className="flex items-center">
                       <input 
                         type="radio" 
                         id="lent" 
                         name="type" 
-                        value="lent" 
-                        checked={formData.type === 'lent'} 
+                        value={DEBT_TYPES.LENT}
+                        checked={formData.type === DEBT_TYPES.LENT}
                         onChange={handleChange}
                         className="mr-2"
                       />
                       <label htmlFor="lent" className="font-medium text-gray-900 dark:text-white cursor-pointer">
-                        Money I Lent
+                        I Lent
                       </label>
                     </div>
                   </div>
@@ -429,7 +429,7 @@ export default function DebtsPage() {
                 
                 <div className="flex justify-end">
                   <Button type="submit" leftIcon={<FiPlus />}>
-                    Add {formData.type === 'borrowed' ? 'Debt' : 'Loan'}
+                    Add {formData.type === DEBT_TYPES.BORROWED ? 'Debt' : 'Loan'}
                   </Button>
                 </div>
               </form>
@@ -454,48 +454,44 @@ export default function DebtsPage() {
               <div className="flex justify-center items-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
               </div>
-            ) : pendingDebts.length > 0 ? (
+            ) : activeDebts.length > 0 ? (
               <motion.div
                 className="space-y-4"
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
               >
-                {pendingDebts.map(debt => (
+                {activeDebts.map(debt => (
                   <motion.div
                     key={debt.id}
                     variants={itemVariants}
                     className={`border rounded-lg p-4 ${
-                      debt.type === 'borrowed' 
+                      debt.type === DEBT_TYPES.BORROWED 
                         ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10' 
                         : 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10'
                     }`}
                   >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div>
-                        <div className="flex items-center">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                            debt.type === 'borrowed' 
-                              ? 'bg-red-100 dark:bg-red-900/30' 
-                              : 'bg-green-100 dark:bg-green-900/30'
-                          }`}>
-                            {debt.type === 'borrowed' ? (
-                              <FiArrowUp className={`w-4 h-4 ${
-                                debt.type === 'borrowed' ? 'text-red-500' : 'text-green-500'
-                              }`} />
-                            ) : (
-                              <FiArrowDown className={`w-4 h-4 ${
-                                debt.type === 'borrowed' ? 'text-red-500' : 'text-green-500'
-                              }`} />
-                            )}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-gray-900 dark:text-white">{debt.description}</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {debt.type === 'borrowed' ? 'Borrowed from' : 'Lent to'}: {debt.personName}
-                            </p>
-                          </div>
+                        <div className="flex items-center space-x-3">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              debt.type === DEBT_TYPES.BORROWED ? 'bg-red-500' : 'bg-green-500'
+                            }`}
+                          />
+                          <span
+                            className={
+                              debt.type === DEBT_TYPES.BORROWED ? 'text-red-500' : 'text-green-500'
+                            }
+                          >
+                            {debt.type === DEBT_TYPES.BORROWED ? 'Borrowed' : 'Lent'}
+                          </span>
                         </div>
+                        
+                        <h3 className="font-medium text-gray-900 dark:text-white">{debt.description}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {debt.type === DEBT_TYPES.BORROWED ? 'Borrowed from' : 'Lent to'}: {debt.personName}
+                        </p>
                         
                         {debt.dueDate && (
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -512,7 +508,7 @@ export default function DebtsPage() {
                       
                       <div className="flex flex-col md:flex-row items-center gap-2">
                         <span className={`text-lg font-bold ${
-                          debt.type === 'borrowed' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                          debt.type === DEBT_TYPES.BORROWED ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
                         }`}>
                           {formatCurrency(debt.amount)}
                         </span>
@@ -585,7 +581,7 @@ export default function DebtsPage() {
                           <div>
                             <h3 className="font-medium text-gray-700 dark:text-gray-300">{debt.description}</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {debt.type === 'borrowed' ? 'Borrowed from' : 'Lent to'}: {debt.personName}
+                              {debt.type === DEBT_TYPES.BORROWED ? 'Borrowed from' : 'Lent to'}: {debt.personName}
                             </p>
                           </div>
                         </div>

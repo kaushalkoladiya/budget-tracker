@@ -6,7 +6,7 @@ import { FiPlus } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import ColorPicker from '@/components/ui/ColorPicker';
 import { categoryStorage } from '@/lib/storage/localStorage';
-import { Category as LocalCategory } from '@/types/models/index';
+import { Category, createCategory } from '@/types/models';
 
 interface QuickCategoryFormProps {
   type: 'income' | 'expense';
@@ -49,17 +49,14 @@ export default function QuickCategoryForm({ type, onSuccess, onCancel }: QuickCa
         throw new Error('Category name is required');
       }
       
-      const now = Date.now();
-      
-      // Create category object that matches the localStorage format
-      const newCategory: LocalCategory = {
-        id: `cat_${now}_${Math.random().toString(36).substring(2, 9)}`,
+      // Create new category
+      const newCategory = createCategory({
         name: formData.name.trim(),
         color: formData.color,
-        icon: 'tag', // Default icon
-        createdAt: now,
-        updatedAt: now
-      };
+        icon: 'tag',
+        incomeOnly: formData.incomeOnly,
+        expenseOnly: formData.expenseOnly,
+      });
       
       // Get existing categories
       const categories = categoryStorage.getAll();
