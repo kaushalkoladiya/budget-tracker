@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { motion, HTMLMotionProps } from 'framer-motion';
-import { IconType } from 'react-icons';
 
 interface ButtonProps extends Omit<HTMLMotionProps<"button">, "size" | "children"> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
@@ -38,7 +37,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     
     // Variant styles
     const variantStyles = {
-      primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 disabled:bg-blue-300',
+      primary: 'bg-green-500 text-white hover:bg-green-700 focus:ring-green-500 disabled:bg-green-300',
       secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 disabled:bg-gray-100 dark:disabled:bg-gray-800',
       outline: 'border border-gray-300 bg-transparent text-gray-700 hover:bg-gray-50 focus:ring-gray-500 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 disabled:text-gray-300 dark:disabled:text-gray-700',
       ghost: 'bg-transparent text-gray-600 hover:bg-gray-100 focus:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800 disabled:text-gray-300 dark:disabled:text-gray-700',
