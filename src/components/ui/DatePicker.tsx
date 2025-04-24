@@ -95,7 +95,7 @@ export default function DatePicker({
     const daysInMonth = getDaysInMonth(year, month);
     const firstDayOfMonth = getFirstDayOfMonth(year, month);
     
-    const days = [];
+    const days: React.ReactNode[] = [];
     
     // Add empty cells for days before the first day of month
     for (let i = 0; i < firstDayOfMonth; i++) {

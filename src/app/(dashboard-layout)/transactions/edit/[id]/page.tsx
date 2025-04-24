@@ -6,7 +6,7 @@ import TransactionForm from '@/components/forms/TransactionForm';
 
 export default function EditTransactionPage() {
   const params = useParams();
-  const transactionId = params.id as string;
+  const transactionId = params?.id as string;
   
   return (
     <div className="container mx-auto px-4 py-8">
