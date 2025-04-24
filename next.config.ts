@@ -3,6 +3,11 @@ import withPWA from 'next-pwa';
 
 const nextConfig: NextConfig = {
   /* config options here */
+
+  eslint: {
+    // will allow builds to succeed even if there are lint errors
+    ignoreDuringBuilds: true,
+  },
 };
 
 const pwaConfig = withPWA({

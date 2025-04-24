@@ -30,9 +30,12 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
-    "eslint": "^9",
+    "eslint": "^9.25.1",
     "eslint-config-next": "15.2.4",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.0.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "^8.31.0"
   }
 }
