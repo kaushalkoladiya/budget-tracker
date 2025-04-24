@@ -9,8 +9,7 @@ import {
   FiPieChart, 
   FiDollarSign, 
   FiCreditCard, 
-  FiList, 
-  FiSettings,
+  FiList,
   FiMenu,
   FiX,
   FiBell,
@@ -65,7 +64,7 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex flex-col h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
+      <nav className="hidden fixed md:flex flex-col h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
         <div className="flex items-center mb-8 px-2">
           <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mr-3">
             <FiDollarSign className="w-6 h-6 text-white" />

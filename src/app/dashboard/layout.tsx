@@ -14,7 +14,9 @@ export default function DashboardLayout({
       <Navigation />
       
       {/* Main content */}
-      <main className="flex-1 mx-auto pt-16 md:pt-0">
+      <main 
+        className="flex-1 mx-auto pt-16 md:pt-0 sm:ml-0 md:ml-64"
+      >
         {children}
       </main>
     </div>
