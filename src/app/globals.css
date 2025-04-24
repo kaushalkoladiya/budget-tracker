@@ -19,9 +19,41 @@
   }
 } */
 
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
 body {
+  color: rgb(var(--foreground-rgb));
   background: oklch(21% .034 264.665);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Add padding to body when install banner is showing */
+body.has-install-banner {
+  padding-top: 4rem;
+}
+
+/* Adjust mobile header position when banner is showing */
+body.has-install-banner .md\:hidden .fixed.top-0 {
+  top: 4rem;
+}
+
+/* Adjust desktop navigation when banner is showing */
+@media (min-width: 768px) {
+  body.has-install-banner .md\:flex.fixed {
+    padding-top: 4rem;
+  }
 }
 
 .layout-margin {
