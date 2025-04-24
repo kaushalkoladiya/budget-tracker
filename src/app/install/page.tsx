@@ -2,10 +2,17 @@
 
 import { FiArrowLeft, FiDownload, FiSmartphone, FiMonitor } from 'react-icons/fi';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
 
 export default function InstallPage() {
   const [platform, setPlatform] = useState<'ios' | 'android' | 'desktop' | null>(null);
+  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
+  const [installSupported, setInstallSupported] = useState(false);
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -18,8 +25,39 @@ export default function InstallPage() {
       } else {
         setPlatform('desktop');
       }
+
+      // Listen for the beforeinstallprompt event
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Store the event so it can be triggered later
+        deferredPrompt.current = e as BeforeInstallPromptEvent;
+        setInstallSupported(true);
+      });
     }
   }, []);
+
+  const installApp = async () => {
+    if (!deferredPrompt.current) {
+      return;
+    }
+
+    // Show the install prompt
+    deferredPrompt.current.prompt();
+    
+    // Wait for the user to respond to the prompt
+    const choiceResult = await deferredPrompt.current.userChoice;
+    
+    if (choiceResult.outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+      setInstallSupported(false);
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+    
+    // Clear the deferredPrompt for next time
+    deferredPrompt.current = null;
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-16 md:pt-0 md:pl-64">
@@ -37,11 +75,21 @@ export default function InstallPage() {
         </h1>
         
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-8">
-          <div className="flex items-center mb-4">
-            <FiDownload className="w-6 h-6 text-green-600 dark:text-green-400 mr-3" />
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Install as an App on Your Device
-            </h2>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <FiDownload className="w-6 h-6 text-green-600 dark:text-green-400 mr-3" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Install as an App on Your Device
+              </h2>
+            </div>
+            {installSupported && (
+              <button
+                onClick={installApp}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Install Now
+              </button>
+            )}
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">
             Budget Tracker is a progressive web app (PWA), which means you can install it directly on your device without going through an app store.
@@ -74,11 +122,21 @@ export default function InstallPage() {
         
         {platform === 'android' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-8">
-            <div className="flex items-center mb-4">
-              <FiSmartphone className="w-6 h-6 text-green-500 mr-3" />
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Android Installation Instructions
-              </h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <FiSmartphone className="w-6 h-6 text-green-500 mr-3" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Android Installation Instructions
+                </h2>
+              </div>
+              {installSupported && (
+                <button
+                  onClick={installApp}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Install
+                </button>
+              )}
             </div>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
               <p>Follow these steps to install Budget Tracker on your Android device:</p>
@@ -98,11 +156,21 @@ export default function InstallPage() {
         
         {platform === 'desktop' && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-6 mb-8">
-            <div className="flex items-center mb-4">
-              <FiMonitor className="w-6 h-6 text-indigo-500 mr-3" />
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Desktop Installation Instructions
-              </h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <FiMonitor className="w-6 h-6 text-indigo-500 mr-3" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Desktop Installation Instructions
+                </h2>
+              </div>
+              {installSupported && (
+                <button
+                  onClick={installApp}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Install
+                </button>
+              )}
             </div>
             <div className="space-y-4 text-gray-700 dark:text-gray-300">
               <p>Follow these steps to install Budget Tracker on your desktop:</p>

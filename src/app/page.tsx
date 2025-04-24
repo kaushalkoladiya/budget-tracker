@@ -49,25 +49,25 @@ export default function Home() {
       title: 'Custom Categories',
       description: 'Organize your finances with personalized categories and subcategories.',
       icon: <FiBarChart2 className="w-6 h-6 text-green-500" />,
-      imageUrl: '/screenshots/categories.png' // Add your screenshot here
+      imageUrl: '/images/categories.png'
     },
     {
       title: 'Budget Goals',
       description: 'Set and track spending limits for different categories.',
       icon: <FiDollarSign className="w-6 h-6 text-green-500" />,
-      imageUrl: '/screenshots/budgets.png' // Add your screenshot here
+      imageUrl: '/images/budgets.png'
     },
     {
       title: 'Debt Tracking',
       description: 'Manage borrowed and lent money with payment schedules.',
       icon: <FiCalendar className="w-6 h-6 text-green-500" />,
-      imageUrl: '/screenshots/debts.png' // Add your screenshot here
+      imageUrl: '/images/debts.png'
     },
     {
       title: 'Spending Insights',
       description: 'Visualize your financial data with interactive charts.',
       icon: <FiPieChart className="w-6 h-6 text-green-500" />,
-      imageUrl: '/screenshots/insights.png' // Add your screenshot here
+      imageUrl: '/images/insights.png'
     }
   ];
 
@@ -111,49 +111,49 @@ export default function Home() {
 
         <div className="container mx-auto px-4 sm:px-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div 
+            <motion.div
               className="max-w-xl"
               initial="hidden"
               animate="visible"
               variants={containerVariants}
             >
-              <motion.div 
+              <motion.div
                 className="inline-block px-4 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium mb-4"
                 variants={itemVariants}
               >
                 Personal Finance Made Simple
               </motion.div>
 
-              <motion.h1 
+              <motion.h1
                 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight"
                 variants={itemVariants}
               >
                 Take Control of Your <span className="text-green-500 dark:text-green-400">Financial Life</span>
               </motion.h1>
-              
-              <motion.p 
+
+              <motion.p
                 className="text-xl text-gray-600 dark:text-gray-300 mb-8"
                 variants={itemVariants}
               >
                 Track income, expenses, budgets, and debts with a beautiful experience that works even offline. No more financial stress.
               </motion.p>
-              
-              <motion.div 
+
+              <motion.div
                 className="flex flex-col sm:flex-row gap-4"
                 variants={itemVariants}
               >
                 <Link href="/dashboard">
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     rightIcon={<FiArrowRight />}
                     className="shadow-lg shadow-green-500/20"
                   >
                     Get Started Free
                   </Button>
                 </Link>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   size="lg"
                   onClick={() => {
                     const featuresSection = document.getElementById('features');
@@ -165,12 +165,12 @@ export default function Home() {
               </motion.div>
 
               {/* Trust indicators */}
-              <motion.div 
+              <motion.div
                 className="mt-8 flex items-center gap-2 text-gray-500 dark:text-gray-400"
                 variants={itemVariants}
               >
                 <FiCheck className="text-green-500" /> No credit card required
-                <span className="mx-2">•</span> 
+                <span className="mx-2">•</span>
                 <FiCheck className="text-green-500" /> Works offline
                 <span className="mx-2">•</span>
                 <FiCheck className="text-green-500" /> PWA enabled
@@ -178,7 +178,7 @@ export default function Home() {
             </motion.div>
 
             {/* App Preview/Mockup */}
-            <motion.div 
+            <motion.div
               className="relative flex justify-center lg:justify-end"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -242,7 +242,7 @@ export default function Home() {
 
           {/* Quick access for returning users */}
           {mounted && hasData && (
-            <motion.div 
+            <motion.div
               className="mt-12 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 max-w-md mx-auto"
               variants={itemVariants}
               initial={{ opacity: 0, y: 20 }}
@@ -263,7 +263,7 @@ export default function Home() {
       <section id="features" className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
-            <motion.span 
+            <motion.span
               className="inline-block px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium mb-4"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -271,7 +271,7 @@ export default function Home() {
             >
               Everything You Need
             </motion.span>
-            <motion.h2 
+            <motion.h2
               className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -280,7 +280,7 @@ export default function Home() {
             >
               Powerful Features for Complete <span className="text-green-500 dark:text-green-400">Financial Control</span>
             </motion.h2>
-            <motion.p 
+            <motion.p
               className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -293,7 +293,7 @@ export default function Home() {
 
           <div className="space-y-24">
             {features.map((feature, index) => (
-              <motion.div 
+              <motion.div
                 key={index}
                 className={`flex flex-col ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'} items-center gap-12`}
                 initial={{ opacity: 0, y: 30 }}
@@ -303,10 +303,12 @@ export default function Home() {
               >
                 {/* Feature Description */}
                 <div className="lg:w-1/2 space-y-6">
-                  <div className="w-12 h-12 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                    {feature.icon}
+                  <div className='flex gap-4 items-center'>
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+                      {feature.icon}
+                    </div>
+                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{feature.title}</h3>
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{feature.title}</h3>
                   <p className="text-lg text-gray-600 dark:text-gray-300">{feature.description}</p>
                   <ul className="space-y-2">
                     {/* Replace with actual feature points */}
@@ -344,13 +346,13 @@ export default function Home() {
                 <div className="lg:w-1/2">
                   <div className="relative mx-auto w-full max-w-md rounded-xl shadow-2xl overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                     {/* Replace with your actual screenshot */}
-                    <div className="aspect-[9/16] w-full bg-gray-100 dark:bg-gray-700 p-4">
+                    <div className="w-full bg-gray-100 dark:bg-gray-700 p-4">
                       {feature.imageUrl ? (
-                        <Image 
-                          src={feature.imageUrl} 
-                          alt={feature.title} 
-                          width={500} 
-                          height={900} 
+                        <Image
+                          src={feature.imageUrl}
+                          alt={feature.title}
+                          width={500}
+                          height={900}
                           className="rounded-lg"
                         />
                       ) : (
@@ -371,7 +373,7 @@ export default function Home() {
       <section className="py-20 bg-white dark:bg-gray-900">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
-            <motion.span 
+            <motion.span
               className="inline-block px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium mb-4"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
@@ -379,8 +381,8 @@ export default function Home() {
             >
               User Stories
             </motion.span>
-            
-            <motion.h2 
+
+            <motion.h2
               className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -421,7 +423,7 @@ export default function Home() {
       {/* PWA Install Prompt - Improved Version */}
       <section className="py-20 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
         <div className="container mx-auto px-4 sm:px-6">
-          <motion.div 
+          <motion.div
             className="max-w-5xl mx-auto bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -469,7 +471,7 @@ export default function Home() {
                       <div className="w-full h-24 bg-gray-100 dark:bg-gray-800 rounded-sm"></div>
                     </div>
                   </div>
-                  
+
                   {/* Mobile mockup, positioned to overlap desktop */}
                   <div className="absolute -bottom-6 -right-10 w-24 h-40 bg-gray-900 rounded-xl shadow-xl overflow-hidden border-4 border-gray-800">
                     <div className="h-3 bg-gray-800"></div>
@@ -490,7 +492,7 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-b from-white to-green-50 dark:from-gray-900 dark:to-green-900/20">
         <div className="container mx-auto px-4 sm:px-6">
-          <motion.div 
+          <motion.div
             className="max-w-3xl mx-auto text-center"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -504,7 +506,7 @@ export default function Home() {
               Join thousands of users who have simplified their financial life.
             </p>
             <Link href="/dashboard">
-              <Button 
+              <Button
                 size="lg"
                 className="shadow-lg shadow-green-500/20"
                 rightIcon={<FiArrowRight />}
@@ -528,7 +530,7 @@ export default function Home() {
               <p className="text-gray-600 dark:text-gray-400 mb-4">Take control of your finances with our powerful, yet simple budget tracking app.</p>
               <p className="text-gray-500 dark:text-gray-500">© {new Date().getFullYear()} Budget Tracker. All rights reserved.</p>
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Features</h3>
               <ul className="space-y-2">
@@ -538,7 +540,7 @@ export default function Home() {
                 <li><Link href="#" className="text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400">Insights</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Resources</h3>
               <ul className="space-y-2">

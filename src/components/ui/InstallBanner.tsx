@@ -1,16 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FiDownload, FiX } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 type Platform = 'ios' | 'android' | 'desktop' | null;
 
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+}
+
 export default function InstallBanner() {
   const [showBanner, setShowBanner] = useState(false);
   const [platform, setPlatform] = useState<Platform>(null);
   const [isStandalone, setIsStandalone] = useState(false);
+  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     // Check if app is already installed
@@ -33,13 +39,26 @@ export default function InstallBanner() {
       } else if (/android/i.test(userAgent)) {
         setPlatform('android');
         setShowBanner(true);
-      } else if (
-        userAgent.indexOf('Chrome') !== -1 && 
-        'BeforeInstallPromptEvent' in window
-      ) {
+      } else if (userAgent.indexOf('Chrome') !== -1) {
         setPlatform('desktop');
         setShowBanner(true);
       }
+
+      // Listen for the beforeinstallprompt event
+      window.addEventListener('beforeinstallprompt', (e) => {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        // Store the event so it can be triggered later
+        deferredPrompt.current = e as BeforeInstallPromptEvent;
+        // Update UI to notify the user they can install the PWA
+        setShowBanner(true);
+      });
+
+      // When app is installed, hide the banner
+      window.addEventListener('appinstalled', () => {
+        setShowBanner(false);
+        deferredPrompt.current = null;
+      });
     }
   }, []);
 
@@ -61,6 +80,29 @@ export default function InstallBanner() {
     localStorage.setItem('installBannerDismissed', Date.now().toString());
   };
 
+  const installApp = async () => {
+    if (!deferredPrompt.current) {
+      // The deferred prompt isn't available, so go to install page
+      window.location.href = '/install';
+      return;
+    }
+
+    // Show the install prompt
+    deferredPrompt.current.prompt();
+    
+    // Wait for the user to respond to the prompt
+    const choiceResult = await deferredPrompt.current.userChoice;
+    
+    if (choiceResult.outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    } else {
+      console.log('User dismissed the install prompt');
+    }
+    
+    // Clear the deferredPrompt for next time
+    deferredPrompt.current = null;
+  };
+
   // Don't show banner if already in standalone mode or no install method available
   if (isStandalone || !showBanner || !platform) {
     return null;
@@ -74,8 +116,8 @@ export default function InstallBanner() {
       className="fixed top-0 left-0 right-0 z-50 bg-green-50 dark:bg-green-900/30 border-b border-green-200 dark:border-green-800 p-4 md:px-6"
     >
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <div className="flex items-center">
-          <FiDownload className="w-5 h-5 text-green-600 dark:text-green-400 mr-3" />
+        <div className="flex items-center flex-1">
+          <FiDownload className="w-5 h-5 text-green-600 dark:text-green-400 mr-3 shrink-0" />
           <div>
             <p className="text-sm font-medium text-green-800 dark:text-green-300">
               {platform === 'ios' && "Install Budget Tracker on your iPhone"}
@@ -84,8 +126,8 @@ export default function InstallBanner() {
             </p>
             <p className="text-xs text-green-700 dark:text-green-400 mt-0.5">
               {platform === 'ios' && "Tap the share button and select \"Add to Home Screen\""}
-              {platform === 'android' && "Tap the menu and select \"Install App\""}
-              {platform === 'desktop' && "Click on the install icon in your browser&apos;s address bar"}
+              {platform === 'android' && (deferredPrompt.current ? "Click Install" : "Tap the menu and select \"Install App\"")}
+              {platform === 'desktop' && (deferredPrompt.current ? "Click Install" : "Click on the install icon in your browser&apos;s address bar")}
               {' '}
               <Link href="/install" className="underline">
                 Learn more
@@ -93,13 +135,24 @@ export default function InstallBanner() {
             </p>
           </div>
         </div>
-        <button 
-          onClick={dismissBanner}
-          className="ml-4 text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
-          aria-label="Dismiss banner"
-        >
-          <FiX className="w-5 h-5" />
-        </button>
+        
+        <div className="flex items-center ml-4">
+          {(platform === 'android' || platform === 'desktop') && (
+            <button
+              onClick={installApp}
+              className="px-3 py-1.5 mr-3 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+            >
+              Install
+            </button>
+          )}
+          <button 
+            onClick={dismissBanner}
+            className="text-green-700 dark:text-green-400 hover:text-green-900 dark:hover:text-green-300"
+            aria-label="Dismiss banner"
+          >
+            <FiX className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </motion.div>
   );
